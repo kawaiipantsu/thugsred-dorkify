@@ -1,0 +1,19 @@
+# THUGSred Dorkify - docker compose up -d   →   http://localhost:8080
+services:
+  dorkify:
+    build: .
+    image: thugsred-dorkify:1.0.0
+    container_name: dorkify
+    ports:
+      - "${DORKIFY_BIND:-0.0.0.0}:${DORKIFY_PORT:-8080}:8080"
+    restart: unless-stopped
+    # Nothing in the container needs to be writable or privileged.
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/apache2
+      - /var/lock/apache2
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
