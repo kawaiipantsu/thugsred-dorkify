@@ -308,3 +308,22 @@ footer i { color: var(--accent); }
   .patterns, .snips { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .toast { transition: none; } .typer .caret { animation: none; } }
+
+/* Optional local toolkit navigation. */
+.suite-nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 0 0 22px; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
+.suite-nav > span { font-size: .6rem; letter-spacing: .15em; color: var(--faint); margin-right: 10px; }
+.suite-nav a { border: 1px solid transparent; border-radius: 7px; padding: 5px 12px; font-size: .74rem; color: var(--muted); }
+.suite-nav a[aria-current] { color: var(--accent); border-color: var(--accent-dim); background: #0d2424; }
+.suite-nav a:hover { background: var(--surface2); text-decoration: none; }
+
+@media (max-width: 600px) { .suite-nav > span { width: 100%; } .suite-nav a { padding: 5px 8px; } }
+
+/* Explicit global mode; hidden target fields retain their values when switched back. */
+.global-toggle { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 0 0 7px; color: var(--accent); font-size: .76rem; }
+.global-toggle input { margin: 0; accent-color: var(--accent); }
+.global-toggle span { color: var(--faint); font-size: .67rem; }
+.global-help { color: var(--muted); font-size: .72rem; margin: 6px 0 10px; }
+.global-help summary { cursor: pointer; color: var(--accent); }
+.global-help p { margin: 8px 0; }
+.global-help code { color: var(--gold); overflow-wrap: anywhere; }
+input:disabled { opacity: .45; cursor: not-allowed; }

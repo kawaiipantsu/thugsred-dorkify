@@ -30,3 +30,10 @@
 **/node_modules/**
 **/vendor/**
 **/.git/**
+
+# Required notices for bundled fonts.
+!licenses/
+!licenses/**
+
+# Local navigation and other host-specific application settings.
+src/lib/local.php

@@ -86,3 +86,6 @@ test-results/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Host-specific application settings; not distributed.
+/src/lib/local.php

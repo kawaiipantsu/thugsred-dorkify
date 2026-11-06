@@ -53,7 +53,8 @@ artwork ship with the app.
 
 </details>
 
-*Captured from the running UI using example data. Personal scope fields are empty.*
+*Captured from the running UI using example data. Personal scope fields are empty.
+The hosted instance enables optional toolkit navigation; standalone installs omit it.*
 
 ## Quick start
 
@@ -99,6 +100,37 @@ For example, the builder can assemble:
 ```text
 site:example.com "internal use only" (report OR handbook) ext:pdf
 ```
+
+## Global & wildcard searches
+
+Enable **Search globally** in the scope bar to remove the target `site:`
+restriction from compatible library queries and from the builder. Keep
+useful criteria, for example `filetype:pdf "annual report"`. No `*` is needed.
+Templates that still need a specific person, organisation or domain are
+hidden in global mode. Explicit content filters and exclusions remain.
+
+For a suffix search, enter `.dk` or `dk` with global mode off to produce
+`site:dk`. This limits the hostname suffix, not language or geographic
+location. A quoted `*` is a word placeholder; it does not mean “the whole
+web”. Search engines still limit their indexed coverage and returned results.
+
+## Optional local toolkit navigation
+
+Standalone and Docker installations omit sibling-tool navigation by default.
+A hosted deployment can create a `lib/local.php` beside its deployed
+`lib/config.php`, outside the public document root:
+
+```php
+<?php
+return ['toolkit' => [
+    'dorkify' => ['label' => 'Dorkify', 'url' => 'https://search.example.com/'],
+    'another-tool' => ['label' => 'Another tool', 'url' => 'https://tools.example.com/'],
+]];
+```
+
+Only add services you operate. The local file is ignored by Git and excluded
+from Docker builds. Our hosted instance enables this navigation; individual
+installs do not need it.
 
 ## Configuration
 

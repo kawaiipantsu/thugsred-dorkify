@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 — 2026-11-06
+
+- Add an explicit global-search switch for the builder and compatible library queries.
+- Explain domain-suffix searches, wildcard behavior and the limits of global results.
+- Add optional deployment-local toolkit navigation; standalone installs have no sibling-site links.
+- Keep local navigation settings out of Git and Docker images; bust asset caches when content changes.
+
 ## 1.0.0 — 2026-11-05
 
 First standalone release of THUGSred's self-hosted Google dork toolkit.

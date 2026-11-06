@@ -3,6 +3,7 @@
 // workflow. Rendered by PHP (Docker / php -S) or exported to static HTML by
 // scripts/build-static.sh. All behaviour is client-side in assets/dorkify.js.
 require_once __DIR__ . '/../lib/config.php';
+require_once __DIR__ . '/../lib/toolkit.php';
 require_once __DIR__ . '/../lib/dorks.php';
 require_once __DIR__ . '/../lib/reference.php';
 if (PHP_SAPI !== 'cli') header('X-Content-Type-Options: nosniff');
@@ -17,6 +18,7 @@ $e        = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $glyph    = fn(int $cp): string => '&#x' . dechex($cp) . ';';
 $SEV      = ['crit' => 'critical', 'high' => 'high', 'med' => 'medium', 'low' => 'low', 'info' => 'info'];
 $v        = DORKIFY_VERSION;
+$assetVersion = $v . '-' . substr(hash('sha256', hash_file('sha256', __DIR__ . '/assets/dorkify.css') . hash_file('sha256', __DIR__ . '/assets/dorkify.js')), 0, 10);
 ?><!doctype html>
 <html lang="en" data-theme="dark">
 <head>
@@ -28,8 +30,8 @@ $v        = DORKIFY_VERSION;
 <meta name="description" content="<?= $e(DORKIFY_NAME . ' - ' . DORKIFY_TAGLINE) ?>">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/JetBrainsMonoNerdFontMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/fonts.css?v=<?= $v ?>">
-<link rel="stylesheet" href="assets/dorkify.css?v=<?= $v ?>">
+<link rel="stylesheet" href="assets/fonts.css?v=<?= $assetVersion ?>">
+<link rel="stylesheet" href="assets/dorkify.css?v=<?= $assetVersion ?>">
 </head>
 <body>
 <div class="wrap">
@@ -40,7 +42,7 @@ $v        = DORKIFY_VERSION;
 </nav>
 
 <header class="hero">
-  <img class="mascot" src="assets/mascot.svg?v=<?= $v ?>" width="260" height="240"
+  <img class="mascot" src="assets/mascot.svg?v=<?= $assetVersion ?>" width="260" height="240"
        alt="Dorkify mascot: a nerd in a hoodie and glasses, typing dorks on a laptop">
   <div class="hero-text">
     <div class="tag">THUGSred &middot; Google dork toolkit</div>
@@ -56,6 +58,8 @@ $v        = DORKIFY_VERSION;
     </ol>
   </div>
 </header>
+
+<?php render_toolkit('dorkify'); ?>
 
 <div class="layout">
 
@@ -78,6 +82,12 @@ $v        = DORKIFY_VERSION;
 
 <div class="main">
 <section class="scope" id="scope" aria-label="Scope">
+  <label class="global-toggle"><input type="checkbox" id="global-search"> <b>Search globally</b> <span>ignore domain and identity scope</span></label>
+  <details class="global-help"><summary>Global &amp; wildcard searches</summary>
+    <p>Global mode removes the target <code>site:</code> restriction from compatible library queries and from the builder. Keep useful criteria such as <code>filetype:pdf "annual report"</code>; no hostname or <code>*</code> is needed.</p>
+    <p>For a domain suffix, enter <code>.dk</code> or <code>dk</code> with global mode off to generate <code>site:dk</code>. This limits the suffix, not the language, location or ownership of a site. Global mode searches across Google's index, subject to its result limits; it cannot list the entire web.</p>
+    <p>A quoted <code>*</code> is a word placeholder, not an instruction to remove scope. Queries about a specific person, organisation, domain mention or subdomain are hidden in global mode because they still need that identity. Explicit exclusions and content filters remain in place.</p>
+  </details>
   <div class="scope-fields">
     <label class="fld"><span><i>&#xf05b;</i> domain</span>
       <input id="d" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="example.dk"></label>
@@ -208,7 +218,7 @@ $v        = DORKIFY_VERSION;
     <p class="lead"><?= $e($cat['lead']) ?></p>
     <div class="dorks">
       <?php foreach ($cat['dorks'] as $d): ?>
-        <article class="dork" data-sev="<?= $d['s'] ?>" data-q="<?= $e($d['q']) ?>"
+        <article class="dork" data-sev="<?= $d['s'] ?>" data-q="<?= $e($d['q']) ?>" data-global="<?= $e(str_contains($d['q'], '{site}') && !preg_match('/\{(?:d|org|name|user)\}/', $d['q']) ? trim(str_replace('{site}', '', $d['q'])) : '') ?>"
                  data-text="<?= $e(mb_strtolower($d['t'] . ' ' . $d['q'] . ' ' . ($d['n'] ?? '') . ' ' . ($d['f'] ?? '') . ' ' . $cat['title'])) ?>">
           <span class="sev sev-<?= $d['s'] ?>"><?= $SEV[$d['s']] ?></span>
           <div class="dbody">
@@ -320,6 +330,6 @@ location /internal/ {
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="assets/dorkify.js?v=<?= $v ?>"></script>
+<script src="assets/dorkify.js?v=<?= $assetVersion ?>"></script>
 </body>
 </html>

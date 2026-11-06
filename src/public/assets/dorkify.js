@@ -15,6 +15,8 @@
 
   // ---------- scope ----------
   const inD = $('#d'), inO = $('#o'), inN = $('#n'), inU = $('#u'), inF = $('#f');
+  const globalSearch = $('#global-search');
+  const applyGlobal = () => [inD, inO, inN, inU].forEach(el => { el.disabled = globalSearch.checked; });
 
   function normDomain(v) {
     return v.trim().toLowerCase()
@@ -23,9 +25,11 @@
       .replace(/:\d+$/, '')          // port
       .replace(/^\*\./, '')
       .replace(/^www\./, '')
+      .replace(/^\./, '')
       .replace(/\.$/, '');
   }
   const scope = () => {
+    if (globalSearch.checked) return {d:'', o:'', name:'', user:''};
     const d = normDomain(inD.value);
     const o = inO.value.trim().replace(/"/g, '') || (d ? d.split('.')[0] : '');
     const name = inN.value.trim().replace(/"/g, '');
@@ -35,7 +39,8 @@
 
   // Placeholders that can't be filled render as ‹domain› / ‹org› / ‹person› /
   // ‹username› chips, and the dork's search button is disabled.
-  function resolve(tpl) {
+  function resolve(tpl, globalTpl = '') {
+    if (globalSearch.checked) return {q:globalTpl || '‹specific target required›', missing:!globalTpl};
     const { d, o, name, user } = scope();
     let missing = false;
     const out = tpl
@@ -86,7 +91,7 @@
 
   function renderDorks() {
     for (const el of dorks) {
-      const { q, missing } = resolve(el.dataset.q);
+      const { q, missing } = resolve(el.dataset.q, el.dataset.global);
       el._q = missing ? null : q;
       $('.q', el).innerHTML = highlight(q);
       const go = $('.go', el);
@@ -117,7 +122,7 @@
     let shown = 0;
     for (const el of dorks) {
       const text = el.dataset.text + ' ' + (el._q || '').toLowerCase();
-      const ok = sevOn.has(el.dataset.sev) && terms.every((t) => text.includes(t));
+      const ok = (!globalSearch.checked || Boolean(el.dataset.global)) && sevOn.has(el.dataset.sev) && terms.every((t) => text.includes(t));
       el.hidden = !ok;
       if (ok) shown++;
     }
@@ -136,8 +141,10 @@
 
   function saveScope() {
     const url = new URL(location.href);
+    store.set('dorkify.global', globalSearch.checked ? '1' : '0');
+    globalSearch.checked ? url.searchParams.set('global', '1') : url.searchParams.delete('global');
     for (const [k, el] of Object.entries(SCOPE_FIELDS)) {
-      const v = k === 'd' ? scope().d : el.value.trim();
+      const v = globalSearch.checked ? '' : k === 'd' ? scope().d : el.value.trim();
       store.set(`dorkify.${k}`, el.value.trim());
       v ? url.searchParams.set(k, v) : url.searchParams.delete(k);
     }
@@ -173,7 +180,7 @@
   }
 
   function needScope() {
-    toast('set a domain first');
+    toast(globalSearch.checked ? 'add a search criterion or turn off global mode' : 'set a domain first');
     inD.focus();
   }
 
@@ -187,7 +194,7 @@
     const v = (k) => ($(`[data-b="${k}"]`).value || '').trim();
     const { d } = scope();
     const parts = [];
-    const mode = $('input[name="bscope"]:checked').value;
+    const mode = globalSearch.checked ? 'none' : $('input[name="bscope"]:checked').value;
     const dom = d || '‹domain›';
     if (mode === 'domain') parts.push(`site:${dom}`);
     if (mode === 'subs') parts.push(`site:*.${dom} -site:www.${dom}`);
@@ -233,12 +240,18 @@
   // Once the box holds hand-edited text (typed, or loaded with "edit"), a
   // domain change no longer rebuilds it; touching the builder fields does.
   let handEdited = false;
-  const fromBuilder = () => { handEdited = false; build(); };
+  const fromBuilder = event => {
+    if (event?.target.name === 'bscope') {
+      globalSearch.checked = event.target.value === 'none';
+      applyGlobal(); saveScope(); renderDorks(); applyFilter();
+    }
+    handEdited = false; build();
+  };
   $('#bform').addEventListener('submit', (e) => e.preventDefault());
   $('#bform').addEventListener('input', fromBuilder);
   $('#bform').addEventListener('change', fromBuilder);
   qEl.addEventListener('input', () => { handEdited = true; renderQuery(); });
-  $('#q-clear').addEventListener('click', () => { $('#bform').reset(); handEdited = false; build(); qEl.focus(); });
+  $('#q-clear').addEventListener('click', () => { $('#bform').reset(); if (globalSearch.checked) $('input[name="bscope"][value="none"]').checked = true; handEdited = false; build(); qEl.focus(); });
   $('#q-copy').addEventListener('click', () => {
     if (!qEl.value.trim()) return;
     if (qEl.value.includes('‹')) return needScope();
@@ -258,7 +271,7 @@
       if (!el._q) return needScope();
       copy(el._q, 'dork copied');
     } else if (e.target.closest('.edit')) {
-      qEl.value = resolve(el.dataset.q).q;
+      qEl.value = resolve(el.dataset.q, el.dataset.global).q;
       handEdited = true;
       renderQuery();
       $('#builder').scrollIntoView();
@@ -276,13 +289,13 @@
   // ---------- export ----------
   function exportText() {
     const { d, o, name, user } = scope();
-    const who = [d || 'no domain set', o, name, user && `@${user}`].filter(Boolean).join(' / ');
+    const who = [globalSearch.checked ? 'global search' : d || 'no domain set', o, name, user && `@${user}`].filter(Boolean).join(' / ');
     const lines = [`# THUGSred Dorkify - ${who} - ${new Date().toISOString().slice(0, 10)}`, ''];
     for (const c of cats) {
       const shown = $$('.dork:not([hidden])', c);
       if (!shown.length) continue;
       lines.push(`## ${c.dataset.title}`);
-      for (const el of shown) lines.push(`[${el.dataset.sev}] ${$('h3', el).textContent}`, resolve(el.dataset.q).q, '');
+      for (const el of shown) lines.push(`[${el.dataset.sev}] ${$('h3', el).textContent}`, resolve(el.dataset.q, el.dataset.global).q, '');
     }
     return lines.join('\n');
   }
@@ -367,8 +380,15 @@
   Object.values(SCOPE_FIELDS).forEach((el) => el.addEventListener('input', onScope));
   inD.addEventListener('change', () => { inD.value = normDomain(inD.value); onScope(); });
   inF.addEventListener('input', applyFilter);
+  globalSearch.addEventListener('change', () => {
+    $('input[name="bscope"][value="' + (globalSearch.checked ? 'none' : 'domain') + '"]').checked = true;
+    handEdited = false; applyGlobal(); onScope();
+  });
 
   const params = new URLSearchParams(location.search);
+  globalSearch.checked = params.has('global') ? params.get('global') === '1' : store.get('dorkify.global') === '1';
+  if (globalSearch.checked) $('input[name="bscope"][value="none"]').checked = true;
+  applyGlobal();
   for (const [k, el] of Object.entries(SCOPE_FIELDS)) el.value = params.get(k) || store.get(`dorkify.${k}`) || '';
   renderDorks();
   applyFilter();

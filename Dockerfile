@@ -9,7 +9,7 @@ LABEL org.opencontainers.image.title="THUGSred Dorkify" \
       org.opencontainers.image.description="Self-hosted Google dork help, reference and query builder by the Danish hacking community THUGSred" \
       org.opencontainers.image.source="https://github.com/kawaiipantsu/thugsred-dorkify" \
       org.opencontainers.image.url="https://thugs.red" \
-      org.opencontainers.image.version="1.0.0"
+      org.opencontainers.image.version="1.1.0"
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/dorkify/public
 
@@ -23,6 +23,8 @@ RUN set -eux; \
 COPY docker/apache.conf /etc/apache2/conf-available/dorkify.conf
 COPY docker/php.ini     /usr/local/etc/php/conf.d/zz-dorkify.ini
 RUN a2enconf dorkify
+
+COPY licenses/ /usr/share/licenses/dorkify/
 
 COPY --chown=root:root src/ /var/www/dorkify/
 
